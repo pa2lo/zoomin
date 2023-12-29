@@ -1,5 +1,5 @@
 // Files to cache
-const cacheName = 'zoomin-v005';
+const cacheName = 'zoomin-v007';
 const precacheAssets = [
 	'/index.html',
 	'/assets/index.js',

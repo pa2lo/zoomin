@@ -1,5 +1,10 @@
 import { createSignal, onMount, Show } from 'solid-js'
 import Icon from './components/Icon'
+import Button from './components/Button'
+import IcoButton from './components/IcoButton'
+import FilterButton from './components/FilterButton'
+import SettingLabel from './components/SettingLabel'
+import PointerObserver from './components/PointerObserver'
 import createPreview from './components/Preview'
 import createWizard from './components/Wizard'
 
@@ -26,6 +31,7 @@ function App() {
 
 	// settings
 	let settings = localStorage.getItem('settings') ? JSON.parse(localStorage.getItem('settings')) : {}
+
 	const [showSettings, setShowSettings] = createSignal(false)
 	const [settingHideZoom, setSettingHideZoom] = createSignal(settings.hideZoom || false)
 	const [settingHideExpo, setSettingHideExpo] = createSignal(settings.hideExpo || false)
@@ -44,8 +50,8 @@ function App() {
 	// other vars
 	let rearCameraId, frontCameraId, torchCameraId, currentCameraId, videoStream, videoStreamTrack, torchStreamTrack
 
-	let zoomMoveStep = 1
-	let expoMoveStep = 1
+	const [zoomMoveStep, setZoomMoveStep] = createSignal(1)
+	const [expoMoveStep, setExpoMoveStep] = createSignal(1)
 
 	let torchCache
 	let torchCache2
@@ -66,6 +72,13 @@ function App() {
 		if (torchCache == true) updateTorch(false)
 		setPreview(videoEl, multiplied())
 		setFreeze(true)
+	}
+	function getDefaultCamera() {
+		navigator.mediaDevices.getUserMedia({
+			video: { facingMode: "environment" }
+		}).then(stream => {
+			setStream(stream, true)
+		}).catch(error => console.log(error))
 	}
 	function setStream(stream, setRearCameraId) {
 		videoEl.srcObject = stream
@@ -119,8 +132,8 @@ function App() {
 		setMoveSteps()
 	}
 	function setMoveSteps() {
-		if (zoom() != null)	zoomMoveStep = zoomSlider.clientWidth / ((zoomData().max - zoomData().min) / zoomData().step)
-		if (expo() != null) expoMoveStep = expoSlider.clientWidth / ((expoData().max - expoData().min) / expoData().step)
+		if (zoom() != null)	setZoomMoveStep(zoomSlider.clientWidth / ((zoomData().max - zoomData().min) / zoomData().step))
+		if (expo() != null) setExpoMoveStep(expoSlider.clientWidth / ((expoData().max - expoData().min) / expoData().step))
 	}
 
 	function showInfo(text) {
@@ -136,7 +149,7 @@ function App() {
 
 	// zoom
 	function updateZoom(value) {
-		if (!videoStreamTrack) return
+		if (!videoStreamTrack || zoom() == null) return
 
 		setZoom(value)
 		videoStreamTrack.applyConstraints({advanced: [ {zoom: value} ]})
@@ -145,7 +158,7 @@ function App() {
 
 	// expo
 	function updateExpo(value) {
-		if (!videoStreamTrack) return
+		if (!videoStreamTrack || expo() == null) return
 
 		setExpo(value)
 		videoStreamTrack.applyConstraints({advanced: [ {exposureCompensation: value} ]})
@@ -198,82 +211,6 @@ function App() {
 		return `filter${filter()}`
 	}
 
-	// touch events
-	let prevDiff = -1
-	let pinchDiff = null
-	let startX = -1
-	let startY = -1
-	let lastX = -1
-	let lastY = -1
-
-	function handleStart(e) {
-		if (e.touches.length == 1) {
-			startX = e.touches[0].clientX
-			startY = e.touches[0].clientY
-		}
-	}
-	function handleMove(e) {
-		const touches = e.touches
-
-		if (touches.length == 2) {
-			let curDiff = Math.hypot(touches[1].clientX - touches[0].clientX, touches[1].clientY - touches[0].clientY)
-
-			if (prevDiff > 0) {
-				if (pinchDiff == null) pinchDiff = curDiff
-
-				let tempDiff = pinchDiff - curDiff
-				if (Math.abs(tempDiff) > 2) {
-					if (curDiff > prevDiff) updateZoom(parseFloat(Math.min(parseFloat(zoom()) + zoomData().step*1.5, zoomData().max)).toFixed(1))
-					else updateZoom(parseFloat(Math.max(parseFloat(zoom()) - zoomData().step*1.5, zoomData().min)).toFixed(1))
-
-					pinchDiff = curDiff
-				}
-			}
-			prevDiff = curDiff
-		} else if (touches.length == 1) {
-			if (lastX > -1) {
-				let diffX = Math.abs(touches[0].clientX - lastX)
-				if (diffX > expoMoveStep) {
-					let multiplier = parseInt(diffX / expoMoveStep)
-					if (touches[0].clientX > lastX) updateExpo(parseFloat(Math.min(parseFloat(expo()) + (multiplier * expoData().step), expoData().max)).toFixed(1))
-					else updateExpo(parseFloat(Math.max(parseFloat(expo()) - (multiplier * expoData().step), expoData().min)).toFixed(1))
-
-					lastX = touches[0].clientX
-				}
-			} else if (lastY > -1) {
-				let diffY = Math.abs(touches[0].clientY - lastY)
-				if (diffY > zoomMoveStep) {
-					let multiplier = parseInt(diffY / zoomMoveStep)
-					if (touches[0].clientY > lastY) updateZoom(parseFloat(Math.max(parseFloat(zoom()) - (multiplier * zoomData().step), zoomData().min)).toFixed(1))
-					else updateZoom(parseFloat(Math.min(parseFloat(zoom()) + (multiplier * zoomData().step), zoomData().max)).toFixed(1))
-
-					lastY = touches[0].clientY
-				}
-			} else {
-				let diffX = touches[0].clientX - startX,
-					diffY = touches[0].clientY - startY,
-					absDiffY = Math.abs(diffY),
-					absDiffX = Math.abs(diffX)
-
-				if (absDiffX > absDiffY && absDiffX > 8) lastX = touches[0].clientX
-				else if (absDiffY > absDiffX && absDiffY > 8) lastY = touches[0].clientY
-			}
-		}
-	}
-	function handleCancel(e) {
-		if (e.touches.length == 1) {
-			prevDiff = -1
-			pinchDiff = null
-			startX = e.touches[0].clientX
-			startY = e.touches[0].clientY
-		} else {
-			startX = -1
-			startY = -1
-		}
-		lastX = -1
-		lastY = -1
-	}
-
 	// install
 	function installApp() {
 		if (!installPrompt) return
@@ -286,14 +223,6 @@ function App() {
 				setHasInstallPrompt(false)
 			}
 		})
-	}
-
-	function getDefaultCamera() {
-		navigator.mediaDevices.getUserMedia({
-			video: { facingMode: "environment" }
-		}).then(stream => {
-			setStream(stream, true)
-		}).catch(error => console.log(error))
 	}
 
 	// mount
@@ -390,13 +319,7 @@ function App() {
 			<div class={`container ${settingSmallerButtons() ? 'buttonsSmaller' : 'buttonsNormal'}`}>
 				<div class="sliders">
 					<Show when={!settingDIsableGestures()}>
-						<div
-							class="pointerObserver"
-							onTouchStart={handleStart}
-							onTouchMove={handleMove}
-							onTouchEnd={handleCancel}
-							onTouchCancel={handleCancel}
-						/>
+						<PointerObserver zoom={zoom()} zoomData={zoomData()} updateZoom={v => updateZoom(v)} expo={expo()} expoData={expoData()} updateExpo={v => updateExpo(v)} zoomMoveStep={zoomMoveStep()} expoMoveStep={expoMoveStep()} />
 					</Show>
 					<Show when={!settingHideZoom()}>
 						<input
@@ -424,38 +347,22 @@ function App() {
 							ref={expoSlider}
 						/>
 					</Show>
-					<button class="icoButton refresh" disabled={freeze()} onClick={() => window.location.reload()}>
-						<Icon icon="refresh" />
-					</button>
-					<button class="icoButton settings" disabled={freeze()} onClick={() => setShowSettings(s => !s)}>
-						<Icon icon="settings" />
-					</button>
+					<IcoButton class="refresh" disabled={freeze()} handleClick={() => window.location.reload()} icon="refresh" />
+					<IcoButton class="settings" disabled={freeze()} handleClick={() => setShowSettings(s => !s)} icon="settings" />
 					<div class={`info ${infoActive() ? 'isActive' : ''}`} ref={infoEl}></div>
 				</div>
 
 				<div class="icoButtons">
-					<button class="icoButton torch" classList={{isActive: torch()}} disabled={torch() == null || freeze() || frontCamera()} onClick={() => updateTorch(!torch())}>
-						<Icon icon={torch() ? 'bulbon' : 'bulb'} />
-					</button>
-					<button class="icoButton selfie" classList={{isActive: frontCamera()}} disabled={frontCamera() == null || freeze()} onClick={() => toggleFrontCamera()}>
-						<Icon icon="selfie" />
-					</button>
-					<button class="icoButton filter" classList={{isActive: filter() != "None"}} onClick={() => setShowFilters(true)}>
-						<Icon icon="filter" />
-					</button>
+					<IcoButton class="torch" active={torch()} disabled={torch() == null || freeze() || frontCamera()} handleClick={() => updateTorch(!torch())} icon={torch() ? 'bulbon' : 'bulb'} />
+					<IcoButton class="selfie" active={frontCamera()} disabled={frontCamera() == null || freeze()} handleClick={() => toggleFrontCamera()} icon="selfie" />
+					<IcoButton class="filter" active={filter() != "None"} handleClick={() => setShowFilters(true)} icon="filter" />
 					<Show when={!freeze()}>
-						<button class="icoButton multiplier" classList={{isActive: multiplied()}} onClick={() => setMultiplied(m => !m)}>
-							<Icon icon={multiplied() ? 'z2x' : 'z1x'} />
-						</button>
+						<IcoButton class="multiplier" active={multiplied()} handleClick={() => setMultiplied(m => !m)} icon={multiplied() ? 'z2x' : 'z1x'} />
 					</Show>
 					<Show when={freeze()}>
-						<button class="icoButton download" onClick={() => downloadImage()}>
-							<Icon icon="download" />
-						</button>
+						<IcoButton class="download" handleClick={() => downloadImage()} icon="download" />
 					</Show>
-					<button class="icoButton freeze" classList={{isActive: freeze()}} onClick={() => toggleFreeze()}>
-						<Icon icon={freeze() ? 'unfreeze' : 'freeze'}/>
-					</button>
+					<IcoButton class="freeze" active={freeze()} handleClick={() => toggleFreeze()} icon={freeze() ? 'unfreeze' : 'freeze'} />
 				</div>
 			</div>
 
@@ -465,27 +372,13 @@ function App() {
 				<h3>Filter</h3>
 				<button class="filterX" onClick={() => setShowFilters(false)}>✕</button>
 				<div class="filtersGroup">
-					<button class="filterButton" onClick={() => setFilter('None')} classList={{isActive: filter() == 'None'}}>
-						<img class="filterImg filterNone" src="/book-crop.jpg" alt='' />
-					</button>
-					<button class="filterButton" onClick={() => setFilter('Grayscale')} classList={{isActive: filter() == 'Grayscale'}}>
-						<img class="filterImg filterGrayscale" src="/book-crop.jpg" alt='' />
-					</button>
-					<button class="filterButton" onClick={() => setFilter('Invert')} classList={{isActive: filter() == 'Invert'}}>
-						<img class="filterImg filterInvert" src="/book-crop.jpg" alt='' />
-					</button>
-					<button class="filterButton" onClick={() => setFilter('Blacknwhite')} classList={{isActive: filter() == 'Blacknwhite'}}>
-						<img class="filterImg filterBlacknwhite" src="/book-crop.jpg" alt='' />
-					</button>
-					<button class="filterButton" onClick={() => setFilter('Highcontrast')} classList={{isActive: filter() == 'Highcontrast'}}>
-						<img class="filterImg filterHighcontrast" src="/book-crop.jpg" alt='' />
-					</button>
-					<button class="filterButton" onClick={() => setFilter('Lowercontrast')} classList={{isActive: filter() == 'Lowercontrast'}}>
-						<img class="filterImg filterLowercontrast" src="/book-crop.jpg" alt='' />
-					</button>
-					<button class="filterButton" onClick={() => setFilter('Highercontrast')} classList={{isActive: filter() == 'Highercontrast'}}>
-						<img class="filterImg filterHighercontrast" src="/book-crop.jpg" alt='' />
-					</button>
+					<FilterButton name="None" filter={filter()} setFilter={setFilter} />
+					<FilterButton name="Grayscale" filter={filter()} setFilter={setFilter} />
+					<FilterButton name="Invert" filter={filter()} setFilter={setFilter} />
+					<FilterButton name="Blacknwhite" filter={filter()} setFilter={setFilter} />
+					<FilterButton name="Highcontrast" filter={filter()} setFilter={setFilter} />
+					<FilterButton name="Lowercontrast" filter={filter()} setFilter={setFilter} />
+					<FilterButton name="Highercontrast" filter={filter()} setFilter={setFilter} />
 				</div>
 			</div>
 
@@ -501,8 +394,8 @@ function App() {
 						<div class="installCont">
 							<h3>Download App</h3>
 							<p class="installText">Download Zoomin as app to your device?</p>
-							<button class="button" onClick={() => installApp()}>Download</button>
-							<button class="button outline" onClick={() => setShowInstallPrompt(false)}>Cancel</button>
+							<Button text="Download" handleClick={() => installApp()} />
+							<Button text="Cancel" outline handleClick={() => setShowInstallPrompt(false)} />
 						</div>
 					</div>
 				</Show>
@@ -514,27 +407,15 @@ function App() {
 					<h3>Settings</h3>
 					<button class="filterX" onClick={() => setShowSettings(false)}>✕</button>
 					<div class="settingsOptions">
-						<label class="settingLabel">
-							<span class="settingText">Hide zoom slider</span>
-							<input class="settingCb" type="checkbox" checked={settingHideZoom()} onChange={(e) => updateSettings(setSettingHideZoom(e.target.checked))} />
-						</label>
-						<label class="settingLabel">
-							<span class="settingText">Hide brightness slider</span>
-							<input class="settingCb" type="checkbox" checked={settingHideExpo()} onChange={(e) => updateSettings(setSettingHideExpo(e.target.checked))} />
-						</label>
-						<label class="settingLabel">
-							<span class="settingText">Disable gestures</span>
-							<input class="settingCb" type="checkbox" checked={settingDIsableGestures()} onChange={(e) => updateSettings(setSettingDisableGestures(e.target.checked))} />
-						</label>
-						<label class="settingLabel">
-							<span class="settingText">Smaller buttons</span>
-							<input class="settingCb" type="checkbox" checked={settingSmallerButtons()} onChange={(e) => updateSettings(setSettingSmallerButtons(e.target.checked))} />
-						</label>
+						<SettingLabel label="Hide zoom slider" checked={settingHideZoom()} handleChange={v => updateSettings(setSettingHideZoom(v))} />
+						<SettingLabel label="Hide brightness slider" checked={settingHideExpo()} handleChange={v => updateSettings(setSettingHideExpo(v))} />
+						<SettingLabel label="Disable gestures" checked={settingDIsableGestures()} handleChange={v => updateSettings(setSettingDisableGestures(v))} />
+						<SettingLabel label="Smaller buttons" checked={settingSmallerButtons()} handleChange={v => updateSettings(setSettingSmallerButtons(v))} />
 					</div>
-					<button class="button" onClick={() => showWizard()}>Show wizard</button>
+					<Button text="Show wizard" handleClick={() => showWizard()} />
 					<hr class="settingsDivider" />
-					<button class="button outline" onClick={() => restoreDefaults()}>Restore defaults</button>
-					<button class="button" onClick={() => pageReload()}>Full reload</button>
+					<Button text="Restore defaults" outline handleClick={() => restoreDefaults()} />
+					<Button text="Full reload" handleClick={() => pageReload()} />
 				</div>
 			</div>
 		</>
