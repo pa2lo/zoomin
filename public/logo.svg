@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-zoom-scan" width="24" height="24" viewBox="0 0 24 24" stroke-width="1" stroke="#fff" fill="none" stroke-linecap="round" stroke-linejoin="round">
+	<rect fill="#075a83" stroke="none" x="0" y="0" width="24" height="24" rx="2"></rect>
+
+	<!--<path d="M4 8v-2a2 2 0 0 1 2 -2h2" stroke="#FFFFFF66" />
+	<path d="M16 20h2a2 2 0 0 0 2 -2v-2" stroke="#FFFFFF66" />
+
+	<path d="M4 16v2a2 2 0 0 0 2 2h2" stroke="#FFFFFF66" />
+	<path d="M16 4h2a2 2 0 0 1 2 2v2" stroke="#FFFFFF66" />-->
+
+	<!--<path d="M3.69 8.56a9 9 0 0 0 -.69 3.44"></path>
+	<path d="M8.56 20.31a9 9 0 0 0 3.44 .69"></path>
+	<path d="M20.31 15.44a9 9 0 0 0 .69 -3.44"></path>
+	<path d="M15.44 3.69a9 9 0 0 0 -3.44 -.69"></path>-->
+
+	<!--<path d="M8.56 3.69a9 9 0 0 0 -2.92 1.95"></path>
+	<path d="M3.69 15.44a9 9 0 0 0 1.95 2.92"></path>
+	<path d="M15.44 20.31a9 9 0 0 0 2.92 -1.95"></path>
+	<path d="M20.31 8.56a9 9 0 0 0 -1.95 -2.92"></path>-->
+
+	<!--<circle cx="10.5" cy="10.5" r="6" fill="#2386e0" />-->
+	<!--<circle cx="10.5" cy="10.5" r="6" fill="#0c86f5aa" />-->
+	<circle cx="10.5" cy="10.5" r="6" fill="#098fd3" />
+	<line x1="16" y1="16" x2="18.5" y2="18.5" />
+	<line x1="10.5" y1="7.5" x2="10.5" y2="13.5" />
+	<line x1="7.5" y1="10.5" x2="13.5" y2="10.5" />
+	<!--<path d="M16 16l-2.5 -2.5" />-->
+</svg>

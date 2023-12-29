@@ -1,0 +1,45 @@
+{
+	"name": "Zoomin",
+	"short_name": "Zoomin",
+	"icons": [
+		{
+			"src": "/logo512.svg",
+			"sizes": "512x512",
+			"type": "image/svg+xml",
+			"purpose": "maskable any"
+		},
+		{
+			"src": "/logo480.png",
+			"sizes": "480x480",
+			"type": "image/png",
+			"purpose": "maskable any"
+		},
+		{
+			"src": "/logo192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "maskable any"
+		}
+	],
+	"scope": "/",
+	"background_color": "#075d85",
+	"theme_color": "#075d85",
+	"display": "standalone",
+	"start_url": "/",
+	"orientation": "any",
+	"description": "PWA Zoom",
+	"dir": "ltr",
+	"lang": "en",
+	"display_override": [
+		"window-controls-overlay",
+		"standalone"
+	],
+	"categories": [
+		"utilities"
+	],
+	"id": "p2l_zoom",
+	"launch_handler": {
+		"client_mode": "navigate-existing"
+	},
+	"prefer_related_applications": false
+}

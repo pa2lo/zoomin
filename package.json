@@ -1,0 +1,19 @@
+{
+  "name": "zoomin",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "solid-js": "^1.8.7"
+  },
+  "devDependencies": {
+    "vite": "^5.0.8",
+    "vite-plugin-mkcert": "^1.17.1",
+    "vite-plugin-solid": "^2.8.0"
+  }
+}

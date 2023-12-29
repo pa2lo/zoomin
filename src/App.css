@@ -1,0 +1,637 @@
+html {
+	overflow: hidden;
+	overscroll-behavior: none;
+}
+
+body {
+	padding: 0;
+	font-size: 1rem;
+	background: #000;
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+	-webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+	line-height: 1.5;
+	touch-action: none;
+}
+* {
+	box-sizing: border-box;
+}
+
+.fixedEl {
+	position: fixed;
+    inset: 0;
+    max-width: 100%;
+}
+.fixedEl, .canvasEl {
+	width: 100%;
+	height: 100%;
+}
+.videoEl, .canvasEl {
+	object-fit: cover;
+	background-color: #000;
+}
+.canvasEl {
+	touch-action: none;
+	transform-origin: top left;
+}
+
+.preview, .settingsModal, .wizard {
+	opacity: 0;
+	pointer-events: none;
+}
+.preview {
+	transition: opacity .25s;
+}
+.preview.isActive, .settingsModal.isOpen, .wizard.isOpen {
+	opacity: 1;
+	pointer-events: auto;
+}
+.preview::before {
+	content: '';
+	inset: 0;
+	position: absolute;
+	border: 2px solid #07cff2;
+	z-index: 1;
+	pointer-events: none;
+}
+
+button {
+	font-size: 1rem;
+	padding: .25rem 1rem;
+	-webkit-tap-highlight-color: transparent;
+	cursor: pointer;
+}
+button:focus, .settingCb:focus {
+	outline: none;
+}
+
+.icon {
+	width: 1em;
+	height: 1em;
+}
+
+.buttonsNormal {
+	--buttonSize: 4rem;
+	--buttonFont: 2rem;
+}
+.buttonsSmaller {
+	--buttonSize: 3rem;
+	--buttonFont: 1.5rem;
+}
+
+.sliders, .icoButtons {
+	position: fixed;
+	left: 0;
+	right: 0;
+}
+.sliders {
+	bottom: calc(var(--buttonSize) + .25rem);
+	top: 0;
+}
+.icoButtons {
+	bottom: .25rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 1px;
+	z-index: 2;
+	pointer-events: none;
+}
+.icoButton {
+	width: var(--buttonSize);
+	height: var(--buttonSize);
+	font-size: var(--buttonFont);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border: none;
+	background: #0008;
+	color: #fff;
+	position: relative;
+	pointer-events: auto;
+	transition: color .15s, background-color .15s;
+}
+
+.icoButtons .icoButton:first-child {
+	border-radius: .375rem 0 0 .375rem;
+}
+.icoButtons .icoButton:last-child {
+	border-radius: 0 .375rem .375rem 0;
+}
+
+.icoButton.isActive {
+	border-color: var(--accent);
+	color: var(--accent);
+	background-color: color-mix(in srgb, var(--accent) 15%, #0008 85%);
+}
+
+.icoButton.selfie {
+	--accent: #ff7b22;
+}
+.icoButton.torch {
+	--accent: #e7e306;
+}
+.icoButton.freeze {
+	--accent: #07cff2;
+	z-index: 3;
+}
+.icoButton.filter {
+	--accent: #ff00b3;
+}
+.icoButton.multiplier {
+	font-size: calc(var(--buttonFont) * 1.75);
+	--accent: #03e64b;
+}
+
+.icoButton.refresh, .icoButton.settings {
+	position: absolute;
+	top: 0;
+	width: 2.625rem;
+	height: 2.625rem;
+	font-size: 1.25rem;
+}
+.icoButton.refresh {
+	left: 0;
+	border-radius: 0 0 0.375rem 0;
+}
+.icoButton.settings {
+	right: 0;
+	border-radius: 0 0 0 0.375rem;
+}
+
+/* sliders */
+.slider {
+	appearance: none;
+	position: absolute;
+	margin: auto;
+	accent-color: #fff;
+	height: .25rem;
+	background: #0008;
+	border-radius: .0625rem;
+	z-index: 1;
+	width: min(100svw - 4rem, 20rem);
+}
+.slider:disabled, .icoButton:disabled {
+	opacity: .5;
+}
+.sliderExpo {
+	bottom: 1.75rem;
+	left: 0;
+	right: 0;
+}
+.sliderZoom {
+	transform: rotate(-90deg);
+	transform-origin: top;
+	top: 0;
+	bottom: 0;
+	margin: auto;
+	right: -8rem;
+	transform-origin: center;
+	--min: min((100svh - 4rem), 20rem);
+	width: var(--min);
+	right: calc(var(--min) / 2 * -1 + 1.875rem);
+}
+
+.slider::-webkit-slider-thumb {
+	appearance: none;
+	border-radius: 2rem;
+	width: 2.75rem;
+	height: 2.75rem;
+	cursor: pointer;
+	background-position: center;
+	background-repeat: no-repeat;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.sliderZoom::-webkit-slider-thumb {
+	background-image: url( "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' stroke-width='2' stroke='%23fff' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0' /%3E%3Cpath d='M7 10l6 0' /%3E%3Cpath d='M10 7l0 6' /%3E%3Cpath d='M21 21l-6 -6' /%3E%3C/svg%3E"), linear-gradient(to right, #0008 calc(50% - .125rem), transparent calc(50% - .125rem), transparent calc(50% + .125rem), #0008 calc(50% + .125rem));
+	transform: rotate(90deg);
+}
+.sliderExpo::-webkit-slider-thumb {
+	background-image: url( "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' stroke-width='2' stroke='%23fff' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0' /%3E%3Cpath d='M12 3l0 18' /%3E%3Cpath d='M12 9l4.65 -4.65' /%3E%3Cpath d='M12 14.3l7.37 -7.37' /%3E%3Cpath d='M12 19.6l8.85 -8.85' /%3E%3C/svg%3E"), linear-gradient(to bottom, #0008 calc(50% - .125rem), transparent calc(50% - .125rem), transparent calc(50% + .125rem), #0008 calc(50% + .125rem));
+}
+
+.pointerObserver {
+	position: absolute;
+	inset: 0;
+	touch-action: none;
+}
+
+.filters, .installCont, .settingsCont {
+	padding: .75rem 1rem 1rem;
+	color: #fff;
+}
+
+.filters {
+	background: #000c;
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 2;
+	transform: translateY(100%);
+	opacity: 0;
+	transition: transform .25s, opacity .25s;
+}
+.filters.isOpen {
+	transform: translateY(0);
+	opacity: 1;
+}
+h3 {
+	margin: 0;
+	line-height: 2rem;
+	font-weight: 600;
+	font-size: 1.5rem;
+}
+.filterX {
+    background: transparent;
+    color: #fff6;
+    font-size: 1.5rem;
+    padding: 0;
+    border: none;
+    line-height: 2rem;
+    position: absolute;
+    top: .75rem;
+    right: 1rem;
+    width: 2rem;
+    text-align: center;
+    margin: 0;
+	font-family: Arial;
+}
+.filtersGroup {
+	margin-top: .625rem;
+	padding-top: .6875rem;
+	border-top: 1px solid #fff6;
+	display: grid;
+	gap: .5rem;
+	overflow: auto;
+	grid-auto-columns: min(25% - .375rem, 5rem);
+	grid-auto-flow: column;
+}
+.filterButton {
+	max-width: 5rem;
+	padding: 1px;
+	background-color: transparent;
+	border: 1px solid #fff6;
+	background-color: #0008;
+}
+.filterButton.isActive {
+	border-color: #fff;
+}
+.filterImg {
+	max-width: 100%;
+	vertical-align: top;
+}
+
+.filterGrayscale {
+	filter: grayscale(1);
+}
+.filterInvert {
+	filter: invert(1);
+}
+.filterBlacknwhite {
+	filter: grayscale(1) contrast(100);
+}
+.filterHighcontrast {
+	filter: contrast(100);
+}
+.filterHighercontrast {
+	filter: contrast(1.5);
+}
+.filterLowercontrast {
+	filter: contrast(.75) brightness(1.25);
+}
+.multiplied {
+	transform: scale(2);
+}
+
+.installModal, .settingsModal {
+	background: #0008;
+	z-index: 4;
+	display: flex;
+	flex-direction: column;
+	padding: 1rem;
+}
+.installCont, .settingsCont {
+	background: #0008;
+	color: #fff;
+	max-width: 24rem;
+	width: 100%;
+	margin: auto;
+	position: relative;
+}
+.installCont {
+	text-align: center;
+}
+
+.installText, .settingsOptions {
+	color: #fffc;
+	margin: .625rem 0 0;
+	border-top: 1px solid #fff6;
+	line-height: 1.25;
+}
+.installText {
+	padding-top: .6875rem;
+}
+
+.button, .installApp {
+	padding: .5rem 1.25rem;
+	background: #098fd3;
+	border: 1px solid #098fd3;
+	color: #fff;
+	font: inherit;
+	font-weight: 600;
+}
+
+.button {
+	margin-top: 0.75rem;
+	width: 100%;
+}
+.button.outline {
+	background-color: transparent;
+	color: #098fd3;
+	background-color: #0008;
+}
+
+.installApp {
+	position: fixed;
+	z-index: 2;
+	left: 0;
+	right: 0;
+	top: 0;
+	width: fit-content;
+	margin: auto;
+	display: flex;
+	align-items: center;
+	gap: .5em;
+	border-radius: 0 0 .375rem .375rem;
+}
+.installApp .icon {
+	font-size: 1.25em;
+}
+
+.info {
+	position: absolute;
+	top: 1rem;
+	left: 50%;
+	transform: translateX(-50%);
+	pointer-events: none;
+	background: #0008;
+	color: #fff;
+	font-size: 1rem;
+	line-height: 1rem;
+	padding: .375rem .875rem;
+	border-radius: .375rem;
+	opacity: 0;
+	transition: opacity .4s;
+}
+.info.isActive {
+	opacity: 1;
+	transition: opacity .1s;
+}
+
+.settingsModal, .wizard {
+	overflow: auto;
+	transition: opacity .15s;
+}
+
+.settingsModalClose {
+	position: absolute;
+	inset: 0;
+}
+
+.settingsDivider {
+	border: none;
+	border-top: 1px solid #fff6;
+	margin-top: 0.75rem;
+	margin-bottom: 0;
+	height: 0;
+}
+
+.settingLabel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6875rem 0;
+    border-bottom: 1px solid #fff6;
+}
+
+.settingCb {
+	appearance: none;
+	margin: 0;
+	border: 1px solid #fff6;
+	background-color: #0008;
+	margin-block: -0.25em;
+	padding: 1px;
+	transition: background-color .1s, border-color .1s;
+	-webkit-tap-highlight-color: transparent;
+	cursor: pointer;
+}
+.settingCb::before {
+	content: '';
+	display: block;
+	width: 1.5em;
+	height: 1.5em;
+	margin-right: 1.5em;
+	background-color: #fff6;
+	transition: background-color .1s, transform .1s;
+}
+.settingCb:checked {
+	border-color: #fff;
+	background-color: #098fd3;
+}
+.settingCb:checked::before {
+	transform: translateX(100%);
+	background-color: #fff;
+}
+
+.wizard {
+	display: flex;
+	padding: 1rem;
+	z-index: 2;
+}
+.wizardStep {
+	width: 100%;
+	background: #0008;
+	max-width: min(70vw, 20rem);
+	margin: auto;
+	padding: 1rem;
+	text-align: center;
+	color: #fff;
+}
+.wizardStepText {
+	color: #fffc;
+	margin: .75rem 0 0;
+	line-height: 1.25;
+}
+
+.wizardButtons {
+	display: flex;
+	flex-wrap: wrap-reverse;
+	gap: 0 .75rem;
+}
+.wizardButtons .button {
+	width: auto;
+	flex: 1 1 7rem;
+}
+
+.wizardStepAnimation {
+	width: 12rem;
+	margin: auto;
+	position: relative;
+	display: flex;
+	justify-content: center;
+}
+.wizardStepArrows {
+	font-size: 6rem;
+	position: relative;
+	color: #fffe;
+}
+.wizardStepHand {
+	color: #fffe;
+	position: absolute;
+	font-size: 2rem;
+}
+
+.step1 .wizardStepArrows {
+	left: -1rem;
+	animation: arrow1 2s linear infinite;
+}
+.step1 .wizardStepHand {
+	left: calc(50% + 1rem);
+	top: calc(50% - .25rem);
+	animation: hand1 2s linear infinite;
+}
+@keyframes arrow1 {
+	0%, 10%, 50%, 90%, 100% {transform: scale(1);}
+	30% {transform: scale(.9);}
+	70% {transform: scale(1.1);}
+}
+@keyframes hand1 {
+	0%, 10%, 50%, 90%, 100% {transform: translateY(0);}
+	30% {transform: translateY(2.25rem);}
+	70% {transform: translateY(-2.25rem);}
+}
+
+.step2 .wizardStepArrows, .step3 .wizardStepArrows {
+	top: -1rem;
+}
+.step2 .wizardStepArrows {
+	animation: arrow2 2s linear infinite;
+}
+.step2 .wizardStepHand, .step3 .wizardStepHand {
+	top: calc(50% + .75rem);
+}
+.step2 .wizardStepHand {
+	left: calc(50% - .875rem);
+	animation: hand2 2s linear infinite;
+}
+@keyframes arrow2 {
+	0%, 10%, 50%, 90%, 100% {color: #ddd;}
+	30% {color: #fff;}
+	70% {color: #bbb;}
+}
+@keyframes hand2 {
+	0%, 10%, 50%, 90%, 100% {transform: translateX(0);}
+	30% {transform: translateX(2.5rem);}
+	70% {transform: translateX(-2.5rem);}
+}
+
+.step3 .wizardStepArrows {
+	animation: arrow3 2s linear infinite;
+}
+.step3 .wizardStepHand1 {
+	scale: -1 1;
+	left: calc(50% - 2.5rem);
+	animation: hand31 2s linear infinite;
+}
+.step3 .wizardStepHand2 {
+	left: calc(50% + .5rem);
+	animation: hand32 2s linear infinite;
+}
+
+@keyframes arrow3 {
+	0%, 10%, 50%, 90%, 100% {transform: scale(1);}
+	30% {transform: scale(.7, 0.9);}
+	70% {transform: scale(1.5, 1.2);}
+}
+@keyframes hand31 {
+	0%, 10%, 50%, 90%, 100% {transform: translateX(0);}
+	30% {transform: translateX(-.75rem);}
+	70% {transform: translateX(.75rem);}
+}
+@keyframes hand32 {
+	0%, 10%, 50%, 90%, 100% {transform: translateX(0);}
+	30% {transform: translateX(-.75rem);}
+	70% {transform: translateX(.75rem);}
+}
+
+.wizardIconsTitle {
+	margin: -.25rem 0 .625rem;
+	font-weight: 600;
+	font-size: 1.125rem;
+}
+.wizardIcons {
+	display: flex;
+	justify-content: center;
+	gap: .75rem;
+	flex-wrap: wrap;
+}
+.wizardIconCont {
+	flex: 0 0 5.5rem;
+	display: flex;
+	text-align: center;
+	flex-direction: column;
+	align-items: center;
+	font-size: 0.875rem;
+	line-height: 1.125rem;
+}
+.wizardIcon {
+	width: 1.75rem;
+	height: 1.75rem;
+	font-size: 1.75rem;
+	margin-bottom: 0.25rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.wizardIcon .icon-tabler-multiplier-1x {
+	flex: 0 0 1.75em;
+	width: auto;
+	height: auto;
+}
+
+@media screen and (orientation: landscape) {
+	.icoButtons {
+		right: 0.25rem;
+		top: 0;
+		bottom: 0;
+		left: auto;
+		flex-direction: column-reverse;
+	}
+
+	.sliders {
+		bottom: 0;
+		left: 0;
+		right: calc(var(--buttonSize) + .25rem);
+	}
+
+	.icoButtons .icoButton:first-child {
+		border-radius: 0 0 .375rem .375rem;
+	}
+	.icoButtons .icoButton:last-child {
+		border-radius: .375rem .375rem 0 0;
+	}
+
+	.icoButton.refresh {
+		top: auto;
+		bottom: 0;
+		border-radius: 0 0.375rem 0 0;
+	}
+	.icoButton.settings {
+		right: auto;
+		left: 0;
+		border-radius: 0 0 0.375rem 0;
+	}
+}
