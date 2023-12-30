@@ -73,17 +73,36 @@ function App() {
 		setPreview(videoEl, multiplied())
 		setFreeze(true)
 	}
-	function getDefaultCamera() {
+	function getDefaultCamera(onInit) {
 		navigator.mediaDevices.getUserMedia({
 			video: { facingMode: "environment" }
 		}).then(stream => {
-			setStream(stream, true)
+			setStream(stream, onInit)
+
+			if (onInit) {
+				navigator.mediaDevices.enumerateDevices().then((devices) => {
+					devices.filter(device => device.kind == 'videoinput' && currentCameraId != device.deviceId).forEach(async device => {
+						if ((torchCameraId && frontCameraId)) return
+
+						const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: device.deviceId } })
+						const tracks = stream.getVideoTracks()
+						const capabilities = tracks[0].getCapabilities()
+						tracks.forEach(track => track.stop())
+
+						if (!torchCameraId && capabilities.torch) {
+							setTorch(false)
+							torchCameraId = device.deviceId
+						}
+						if (!frontCameraId && capabilities.facingMode.includes('user')) {
+							setFrontCamera(false)
+							frontCameraId = device.deviceId
+						}
+					})
+				})
+			}
 		}).catch(error => console.log(error))
 	}
-	function setStream(stream, setRearCameraId) {
-		videoEl.srcObject = stream
-		videoEl.play()
-
+	function setStream(stream, onInit) {
 		const [track] = stream.getVideoTracks()
 		const capabilities = track.getCapabilities()
 		const settings = track.getSettings()
@@ -93,16 +112,19 @@ function App() {
 
 		// console.log({capabilities, settings})
 		currentCameraId = capabilities.deviceId
-		if (setRearCameraId) rearCameraId = capabilities.deviceId
+		if (onInit) rearCameraId = capabilities.deviceId
 
 		videoStreamTrack.applyConstraints({
 			advanced: [
 				{
-					width: Math.min(capabilities.width.max, 2200),
+					width: Math.min(capabilities.width.max, 2048),
 					resizeMode: "crop-and-scale"
 				}
 			]
 		})
+
+		videoEl.srcObject = stream
+		videoEl.play()
 
 		if (('zoom' in settings)) {
 			setZoom(settings.zoom)
@@ -124,7 +146,7 @@ function App() {
 			})
 		} else setExpo(null)
 
-		if (setRearCameraId && !torchCameraId && capabilities.torch) {
+		if (onInit && !torchCameraId && capabilities.torch) {
 			setTorch(false)
 			torchCameraId = capabilities.deviceId
 		}
@@ -227,7 +249,7 @@ function App() {
 
 	// mount
 	onMount(() => {
-		getDefaultCamera()
+		getDefaultCamera(true)
 
 		document.addEventListener('visibilitychange', () => {
 			if (document.visibilityState === "visible") {
@@ -235,26 +257,6 @@ function App() {
 			} else {
 				if (videoStreamTrack) videoStreamTrack.stop()
 			}
-		})
-
-		navigator.mediaDevices.enumerateDevices().then((devices) => {
-			devices.filter(device => device.kind == 'videoinput').forEach(async device => {
-				if (torchCameraId && frontCameraId) return
-
-				const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: device.deviceId } })
-				const [track] = stream.getVideoTracks()
-				const capabilities = track.getCapabilities()
-				track.stop()
-
-				if (!torchCameraId && capabilities.torch) {
-					setTorch(false)
-					torchCameraId = device.deviceId
-				}
-				if (!frontCameraId && capabilities.facingMode.includes('user')) {
-					setFrontCamera(false)
-					frontCameraId = device.deviceId
-				}
-			})
 		})
 
 		window.addEventListener('beforeinstallprompt', (e) => {

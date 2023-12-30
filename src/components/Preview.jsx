@@ -121,7 +121,6 @@ export default function createPreview() {
 						onTouchCancel={onTouchEnd}
 						style={{transform: transform()}}
 					/>
-					{/* <iframe class="iframeEl fixedEl" ref={iframeEl} frameborder="0" /> */}
 				</div>
 			)
 		}
